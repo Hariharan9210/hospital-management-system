@@ -1,0 +1,26 @@
+Hospital Management System Project Information
+========================================
+
+Project Name:
+Hospital Management System
+
+Purpose:
+A full-stack web application for managing hospital operations such as patients, doctors, appointments, prescriptions, and billing.
+
+Tech Stack:
+- Frontend: React.js
+- Backend: Node.js with Express.js
+- Database: MongoDB
+- Authentication: JWT-based authentication
+
+Main Modules:
+- Authentication and user management
+- Patient management
+- Doctor management
+- Appointment scheduling
+- Prescription management
+- Billing and invoice generation
+
+Project Structure:
+- frontend1/: React frontend application
+- backend/: Node.js backend API and database logic
