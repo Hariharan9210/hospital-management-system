@@ -244,8 +244,8 @@ const AppointmentsPage = () => {
                     <td>{formatDate(a.appointmentDate)}</td>
 
                     {/* Time */}
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {a.timeSlot?.startTime} – {a.timeSlot?.endTime}
+                    <td>
+                      {a.timeSlot?.startTime || '—'}
                     </td>
 
                     {/* Type */}
@@ -387,7 +387,7 @@ const AppointmentsPage = () => {
                 </div>
                 <div className="info-item">
                   <label>Time</label>
-                  <p>{selected.timeSlot?.startTime} – {selected.timeSlot?.endTime}</p>
+                  <p>{selected.timeSlot?.startTime || '—'}</p>
                 </div>
                 <div className="info-item">
                   <label>Type</label>
