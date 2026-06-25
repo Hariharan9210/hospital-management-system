@@ -143,4 +143,21 @@ const cancelAppointment = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { createAppointment, getAllAppointments, getAppointmentById, updateAppointmentStatus, cancelAppointment };
+// Hard delete appointment - admin only
+const deleteAppointment = async (req, res, next) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return next(new AppError('Appointment not found', 404));
+    }
+    await Appointment.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Appointment deleted permanently.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createAppointment, getAllAppointments, getAppointmentById, updateAppointmentStatus, cancelAppointment,deleteAppointment  };

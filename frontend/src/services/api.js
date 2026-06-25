@@ -55,7 +55,8 @@ export const appointmentAPI = {
   getById: (id) => api.get(`/appointments/${id}`),
   create: (data) => api.post('/appointments', data),
   updateStatus: (id, data) => api.put(`/appointments/${id}/status`, data),
-  cancel: (id, data) => api.delete(`/appointments/${id}`, { data })
+  cancel: (id, data) => api.delete(`/appointments/${id}`, { data }),
+  deletePermanent: (id) => api.delete(`/appointments/${id}/permanent`)
 };
 
 export const prescriptionAPI = {

@@ -34,6 +34,8 @@ const AppointmentsPage = () => {
   const [total, setTotal] = useState(0);
   const [showBook, setShowBook] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const LIMIT = 10;
 
   const fetchAppointments = useCallback(async () => {
@@ -76,21 +78,25 @@ const AppointmentsPage = () => {
     }
   };
 
-  // Safe getter for patient name
-  const getPatientName = (appointment) => {
-    if (appointment?.patient?.name) return appointment.patient.name;
-    return 'Unknown Patient';
+  // Delete appointment permanently
+  const handleDelete = async () => {
+  if (!deleteTarget) return;
+  setDeleteLoading(true);
+  try {
+    await appointmentAPI.deletePermanent(deleteTarget._id);
+    toast.success('Appointment deleted successfully');
+    setDeleteTarget(null);
+    fetchAppointments();
+  } catch {
+    toast.error('Failed to delete appointment');
+  } finally {
+    setDeleteLoading(false);
+  }
   };
 
-  const getPatientId = (appointment) => {
-    if (appointment?.patient?.patientId) return appointment.patient.patientId;
-    return '—';
-  };
-
-  const getDoctorName = (appointment) => {
-    if (appointment?.doctor?.name) return appointment.doctor.name;
-    return 'Unknown Doctor';
-  };
+  const getPatientName = (a) => a?.patient?.name || 'Patient not found';
+  const getPatientId = (a) => a?.patient?.patientId || '—';
+  const getDoctorName = (a) => a?.doctor?.name || 'Unknown Doctor';
 
   return (
     <div>
@@ -106,7 +112,6 @@ const AppointmentsPage = () => {
         </button>
       </div>
 
-      {/* Patient info box */}
       {isPatient && (
         <div style={{
           background: '#e0f2fe', border: '1px solid #7dd3fc',
@@ -165,10 +170,13 @@ const AppointmentsPage = () => {
               <h3>No appointments found</h3>
               <p style={{ marginBottom: 16 }}>
                 {status
-                  ? `No ${status} appointments found`
+                  ? `No ${status} appointments`
                   : 'Book your first appointment'}
               </p>
-              <button className="btn btn-primary" onClick={() => setShowBook(true)}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowBook(true)}
+              >
                 + Book Appointment
               </button>
             </div>
@@ -177,7 +185,6 @@ const AppointmentsPage = () => {
               <thead>
                 <tr>
                   <th>Appt ID</th>
-                  {/* Hide patient column for patient role */}
                   {!isPatient && <th>Patient</th>}
                   <th>Doctor</th>
                   <th>Date</th>
@@ -192,14 +199,14 @@ const AppointmentsPage = () => {
                 {appointments.map(a => (
                   <tr key={a._id}>
 
-                    {/* Appointment ID */}
+                    {/* Appt ID */}
                     <td>
                       <span className="badge badge-secondary" style={{ fontSize: 11 }}>
                         {a.appointmentId || '—'}
                       </span>
                     </td>
 
-                    {/* Patient column - only for admin and doctor */}
+                    {/* Patient */}
                     {!isPatient && (
                       <td>
                         {a.patient ? (
@@ -237,8 +244,8 @@ const AppointmentsPage = () => {
                     <td>{formatDate(a.appointmentDate)}</td>
 
                     {/* Time */}
-                    <td>
-                      {a.timeSlot?.startTime || '—'} – {a.timeSlot?.endTime || '—'}
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {a.timeSlot?.startTime} – {a.timeSlot?.endTime}
                     </td>
 
                     {/* Type */}
@@ -250,7 +257,7 @@ const AppointmentsPage = () => {
                     </td>
 
                     {/* Reason */}
-                    <td style={{ maxWidth: 150 }}>
+                    <td style={{ maxWidth: 140 }}>
                       <p style={{
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -270,12 +277,27 @@ const AppointmentsPage = () => {
 
                     {/* Actions */}
                     <td>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setSelected(a)}
-                      >
-                        👁️ View
-                      </button>
+                      <div className="flex gap-2">
+                        {/* View button - for everyone */}
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setSelected(a)}
+                          title="View details"
+                        >
+                          👁️
+                        </button>
+
+                        {/* Delete button - admin only */}
+                        {isAdmin && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => setDeleteTarget(a)}
+                            title="Delete appointment"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
                     </td>
 
                   </tr>
@@ -301,7 +323,7 @@ const AppointmentsPage = () => {
         onSuccess={() => { setShowBook(false); fetchAppointments(); }}
       />
 
-      {/* View / Manage Appointment Modal */}
+      {/* View / Manage Modal */}
       <Modal
         isOpen={!!selected}
         onClose={() => setSelected(null)}
@@ -313,7 +335,8 @@ const AppointmentsPage = () => {
 
               {/* Status banner */}
               <div style={{
-                background: selected.status === 'completed' ? '#d1fae5'
+                background:
+                  selected.status === 'completed' ? '#d1fae5'
                   : selected.status === 'cancelled' ? '#fee2e2'
                   : selected.status === 'confirmed' ? '#dbeafe'
                   : selected.status === 'no-show' ? '#f1f5f9'
@@ -332,13 +355,13 @@ const AppointmentsPage = () => {
                   <p style={{ fontWeight: 600, fontSize: 15 }}>
                     Appointment {selected.status?.charAt(0).toUpperCase() + selected.status?.slice(1)}
                   </p>
-                  <p style={{ fontSize: 13, opacity: 0.8 }}>
+                  <p style={{ fontSize: 12, opacity: 0.8 }}>
                     {selected.appointmentId}
                   </p>
                 </div>
               </div>
 
-              {/* Details grid */}
+              {/* Details */}
               <div className="info-grid" style={{ marginBottom: 16 }}>
                 <div className="info-item">
                   <label>Patient</label>
@@ -364,9 +387,7 @@ const AppointmentsPage = () => {
                 </div>
                 <div className="info-item">
                   <label>Time</label>
-                  <p>
-                    {selected.timeSlot?.startTime} – {selected.timeSlot?.endTime}
-                  </p>
+                  <p>{selected.timeSlot?.startTime} – {selected.timeSlot?.endTime}</p>
                 </div>
                 <div className="info-item">
                   <label>Type</label>
@@ -376,11 +397,9 @@ const AppointmentsPage = () => {
                 </div>
                 <div className="info-item">
                   <label>Status</label>
-                  <p>
-                    <span className={`badge ${statusColors[selected.status]}`}>
-                      {statusIcons[selected.status]} {selected.status}
-                    </span>
-                  </p>
+                  <span className={`badge ${statusColors[selected.status]}`}>
+                    {statusIcons[selected.status]} {selected.status}
+                  </span>
                 </div>
               </div>
 
@@ -433,7 +452,10 @@ const AppointmentsPage = () => {
                   }}>
                     {selected.cancellationReason}
                     {selected.cancelledBy && (
-                      <span style={{ color: 'var(--text-secondary)', fontSize: 12, marginLeft: 8 }}>
+                      <span style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: 12, marginLeft: 8
+                      }}>
                         (by {selected.cancelledBy})
                       </span>
                     )}
@@ -441,12 +463,11 @@ const AppointmentsPage = () => {
                 </div>
               )}
 
-              {/* Admin / Doctor status actions */}
+              {/* Admin / Doctor status update */}
               {(isAdmin || isDoctor) && (
                 <div style={{ marginTop: 16 }}>
                   <p className="section-title">Update Status</p>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-
                     {selected.status === 'scheduled' && (
                       <>
                         <button
@@ -463,7 +484,6 @@ const AppointmentsPage = () => {
                         </button>
                       </>
                     )}
-
                     {selected.status === 'confirmed' && (
                       <>
                         <button
@@ -486,27 +506,23 @@ const AppointmentsPage = () => {
                         </button>
                       </>
                     )}
-
                     {['completed', 'cancelled', 'no-show'].includes(selected.status) && (
                       <div style={{
                         background: '#f8fafc',
                         border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        padding: '10px 14px',
-                        fontSize: 14,
-                        color: 'var(--text-secondary)',
+                        borderRadius: 8, padding: '10px 14px',
+                        fontSize: 14, color: 'var(--text-secondary)',
                         width: '100%'
                       }}>
                         ℹ️ This appointment is <strong>{selected.status}</strong>.
-                        No further status updates are possible.
+                        No further updates possible.
                       </div>
                     )}
-
                   </div>
                 </div>
               )}
 
-              {/* Patient cancel action */}
+              {/* Patient cancel */}
               {isPatient && selected.status === 'scheduled' && (
                 <div style={{ marginTop: 16 }}>
                   <p className="section-title">Actions</p>
@@ -521,20 +537,29 @@ const AppointmentsPage = () => {
 
               {isPatient && selected.status === 'confirmed' && (
                 <div style={{
-                  marginTop: 16,
-                  background: '#fef3c7',
-                  padding: '10px 14px',
-                  borderRadius: 6,
-                  fontSize: 13,
-                  color: '#92400e'
+                  marginTop: 16, background: '#fef3c7',
+                  padding: '10px 14px', borderRadius: 6,
+                  fontSize: 13, color: '#92400e'
                 }}>
-                  ⚠️ This appointment is confirmed. Contact the hospital to cancel.
+                  ⚠️ This appointment is confirmed. Contact hospital to cancel.
                 </div>
               )}
 
             </div>
 
             <div className="modal-footer">
+              {/* Admin can delete from view modal too */}
+              {isAdmin && (
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setSelected(null);
+                    setDeleteTarget(selected);
+                  }}
+                >
+                  🗑️ Delete
+                </button>
+              )}
               <button
                 className="btn btn-secondary"
                 onClick={() => setSelected(null)}
@@ -545,6 +570,117 @@ const AppointmentsPage = () => {
           </>
         )}
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Appointment"
+      >
+        {deleteTarget && (
+          <>
+            <div className="modal-body">
+
+              {/* Warning box */}
+              <div style={{
+                background: '#fee2e2',
+                border: '1px solid #fecaca',
+                borderRadius: 8,
+                padding: '14px 16px',
+                marginBottom: 16,
+                display: 'flex',
+                gap: 12,
+                alignItems: 'flex-start'
+              }}>
+                <span style={{ fontSize: 24 }}>⚠️</span>
+                <div>
+                  <p style={{ fontWeight: 700, color: '#991b1b', marginBottom: 4 }}>
+                    Delete this appointment?
+                  </p>
+                  <p style={{ fontSize: 14, color: '#991b1b' }}>
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              {/* Appointment summary */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: 16
+              }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  fontSize: 14
+                }}>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Appointment ID
+                    </span>
+                    <span className="font-medium">
+                      {deleteTarget.appointmentId}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Patient
+                    </span>
+                    <span className="font-medium">
+                      {getPatientName(deleteTarget)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Doctor
+                    </span>
+                    <span className="font-medium">
+                      {getDoctorName(deleteTarget)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Date
+                    </span>
+                    <span className="font-medium">
+                      {formatDate(deleteTarget.appointmentDate)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Status
+                    </span>
+                    <span className={`badge ${statusColors[deleteTarget.status]}`}>
+                      {statusIcons[deleteTarget.status]} {deleteTarget.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? '⏳ Deleting...' : '🗑️ Yes, Delete'}
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+
     </div>
   );
 };
