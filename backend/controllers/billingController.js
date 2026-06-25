@@ -5,14 +5,47 @@ const { AppError } = require('../middleware/errorMiddleware');
 
 const createBill = async (req, res, next) => {
   try {
-    const { patient, doctor, appointment, items, discount, taxRate, notes } = req.body;
+    const {
+      patient, doctor, appointment,
+      items, discount, taxRate, notes
+    } = req.body;
 
+    // Validate items
+    if (!items || items.length === 0) {
+      return next(new AppError('At least one bill item is required', 400));
+    }
+
+    // Calculate totals manually here too as a safety net
+    const processedItems = items.map(item => ({
+      description: item.description,
+      quantity: Number(item.quantity) || 1,
+      unitPrice: Number(item.unitPrice) || 0,
+      total: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0)
+    }));
+
+    const subtotal = processedItems.reduce((sum, item) => sum + item.total, 0);
+    const discountAmount = Number(discount) || 0;
+    const taxRateNum = Number(taxRate) || 0;
+    const taxAmount = (subtotal - discountAmount) * (taxRateNum / 100);
+    const totalAmount = subtotal - discountAmount + taxAmount;
+
+    // Create bill with all calculated values
     const bill = await Bill.create({
-      patient, doctor, appointment, items,
-      discount: discount || 0, taxRate: taxRate || 0,
-      notes, subtotal: 0
+      patient,
+      doctor: doctor || undefined,
+      appointment: appointment || undefined,
+      items: processedItems,
+      subtotal,
+      discount: discountAmount,
+      taxRate: taxRateNum,
+      taxAmount,
+      totalAmount,        // ← sending it directly so required validation passes
+      amountPaid: 0,
+      balanceDue: totalAmount,
+      notes: notes || ''
     });
 
+    // Link bill to appointment if provided
     if (appointment) {
       await Appointment.findByIdAndUpdate(appointment, { bill: bill._id });
     }
@@ -22,8 +55,15 @@ const createBill = async (req, res, next) => {
       { path: 'doctor', select: 'name specialization' }
     ]);
 
-    res.status(201).json({ success: true, message: 'Bill generated!', data: bill });
-  } catch (error) { next(error); }
+    res.status(201).json({
+      success: true,
+      message: `Bill generated successfully! Total: ₹${totalAmount}`,
+      data: bill
+    });
+
+  } catch (error) {
+    next(error);
+  }
 };
 
 const getAllBills = async (req, res, next) => {

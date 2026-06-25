@@ -42,11 +42,12 @@ const billSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 billSchema.pre('save', async function() {
+
+  // Generate Bill ID
   if (!this.billId) {
     let isUnique = false;
     let billId;
     const year = new Date().getFullYear();
-
     while (!isUnique) {
       const count = await this.constructor.countDocuments();
       const random = Math.floor(Math.random() * 1000);
@@ -54,20 +55,39 @@ billSchema.pre('save', async function() {
       const existing = await this.constructor.findOne({ billId });
       if (!existing) isUnique = true;
     }
-
     this.billId = billId;
-    }
-    this.items.forEach(item => { item.total = item.quantity * item.unitPrice; });
+  }
+
+  // Calculate total for each item
+  if (this.items && this.items.length > 0) {
+    this.items.forEach(item => {
+      item.total = Number(item.quantity) * Number(item.unitPrice);
+    });
+
+    // Calculate subtotal
     this.subtotal = this.items.reduce((sum, item) => sum + item.total, 0);
-    this.taxAmount = (this.subtotal - this.discount) * (this.taxRate / 100);
-    this.totalAmount = this.subtotal - this.discount + this.taxAmount;
-    this.balanceDue = this.totalAmount - this.amountPaid;
-    if (!this.dueDate) {
-      const due = new Date();
-      due.setDate(due.getDate() + 30);
-      this.dueDate = due;
-    }
-    ;
+  }
+
+  // Ensure discount and taxRate are numbers
+  const discount = Number(this.discount) || 0;
+  const taxRate = Number(this.taxRate) || 0;
+
+  // Calculate tax amount
+  this.taxAmount = (this.subtotal - discount) * (taxRate / 100);
+
+  // Calculate total amount
+  this.totalAmount = this.subtotal - discount + this.taxAmount;
+
+  // Calculate balance due
+  const amountPaid = Number(this.amountPaid) || 0;
+  this.balanceDue = this.totalAmount - amountPaid;
+
+  // Set due date if not set
+  if (!this.dueDate) {
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    this.dueDate = due;
+  }
 });
 
 module.exports = mongoose.model('Bill', billSchema);
