@@ -28,32 +28,58 @@ const createPrescription = async (req, res, next) => {
 
 const getAllPrescriptions = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, status } = req.query;
     let filter = {};
 
+    // ============================================
+    // By default exclude cancelled prescriptions
+    // Only show cancelled if status=cancelled is
+    // explicitly requested in query params
+    // ============================================
+    if (status) {
+      filter.status = status;
+    } else {
+      // Default: show only active and completed
+      filter.status = { $in: ['active', 'completed'] };
+    }
+
+    // Role based filtering
     if (req.user.role === 'patient') {
       const p = await Patient.findOne({ userId: req.user._id });
       if (p) filter.patient = p._id;
+      else return res.status(200).json({
+        success: true, count: 0, total: 0,
+        totalPages: 0, currentPage: 1, data: []
+      });
     } else if (req.user.role === 'doctor') {
       const d = await Doctor.findOne({ userId: req.user._id });
       if (d) filter.doctor = d._id;
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
+
     const [prescriptions, total] = await Promise.all([
       Prescription.find(filter)
         .populate('patient', 'name patientId')
         .populate('doctor', 'name specialization')
-        .sort({ prescribedDate: -1 }).skip(skip).limit(parseInt(limit)),
+        .sort({ prescribedDate: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
       Prescription.countDocuments(filter)
     ]);
 
     res.status(200).json({
-      success: true, count: prescriptions.length, total,
+      success: true,
+      count: prescriptions.length,
+      total,
       totalPages: Math.ceil(total / parseInt(limit)),
-      currentPage: parseInt(page), data: prescriptions
+      currentPage: parseInt(page),
+      data: prescriptions
     });
-  } catch (error) { next(error); }
+
+  } catch (error) {
+    next(error);
+  }
 };
 
 const getPrescriptionById = async (req, res, next) => {
