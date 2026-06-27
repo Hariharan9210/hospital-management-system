@@ -88,4 +88,8 @@ const seed = async () => {
   }
 };
 
+<<<<<<< HEAD
 seed();
+=======
+seed();
+>>>>>>> 7ec0d14 (CHANGES FOR LIVE)
