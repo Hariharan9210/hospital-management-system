@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 
 // Add this component before DashboardPage
