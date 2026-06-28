@@ -22,6 +22,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   process.env.CLIENT_URL
 ].filter(Boolean);
+console.log("Allowed Origins:", allowedOrigins);
 
 app.use(cors({
   origin: function(origin, callback) {
