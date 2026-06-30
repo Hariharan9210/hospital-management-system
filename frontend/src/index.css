@@ -219,3 +219,218 @@ tbody tr:last-child td { border-bottom: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .info-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================
+   MOBILE RESPONSIVE FIXES
+   ============================================ */
+
+/* Prevent horizontal scroll on entire page */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ============ MOBILE SIDEBAR ============ */
+@media (max-width: 768px) {
+
+  /* Hide sidebar by default on mobile */
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: none;
+  }
+
+  /* Show sidebar when open class is added */
+  .sidebar.mobile-open {
+    left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Dark overlay behind open sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  /* Main content takes full width on mobile */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  /* Header on mobile */
+  .header {
+    padding: 0 16px;
+  }
+
+  /* Page content padding on mobile */
+  .page-content {
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  /* Tables scroll horizontally inside container */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  /* Make table minimum width so it doesn't break */
+  table {
+    min-width: 600px;
+  }
+
+  /* Cards full width */
+  .card {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Form grids become single column */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats grid - 2 columns on mobile */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+  }
+
+  /* Page header stack on mobile */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  /* Filters stack on mobile */
+  .filters-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filters-row .form-control {
+    width: 100% !important;
+  }
+
+  .filters-row .search-box {
+    width: 100% !important;
+  }
+
+  /* Modal full screen on mobile */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 95vh;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .modal-lg {
+    max-width: 100%;
+  }
+
+  /* Info grid single column */
+  .info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stat cards smaller on mobile */
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-info h3 {
+    font-size: 20px;
+  }
+
+  /* Buttons full width on mobile forms */
+  .btn-lg {
+    width: 100%;
+  }
+
+  /* Hide text in table action buttons - show only icons */
+  .btn-sm span.btn-text {
+    display: none;
+  }
+
+  /* Dashboard grid single column */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Auth card full width */
+  .auth-card {
+    padding: 24px 20px;
+  }
+
+  /* Pagination on mobile */
+  .pagination {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* Extra small screens (phones smaller than 400px) */
+@media (max-width: 400px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+}
+
+
+/* Show hamburger button on mobile */
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: block !important;
+  }
+
+  .sidebar-close-btn {
+    display: block !important;
+  }
+
+  .header-logout-btn {
+    display: block !important;
+  }
+
+  /* Sidebar must be flex column */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+}
